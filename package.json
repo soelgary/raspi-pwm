@@ -6,14 +6,16 @@
   "types": "./declarations/index.d.ts",
   "dependencies": {
     "raspi-peripheral": "^2.0.1",
-    "pigpio": "^0.6.1"
+    "pigpio": "^0.6.1",
+    "physis-label": "/home/pi/dev/src/physis-label"
   },
   "devDependencies": {
     "@types/node": "^9.3.0",
     "@types/pigpio": "^0.4.1",
     "@types/raspi-peripheral": "^2.0.0",
     "tslint": "^5.7.0",
-    "typescript": "^2.5.2"
+    "typescript": "^2.5.2",
+    "physis-label": "/home/pi/dev/src/physis-label"
   },
   "engines": {
     "node": ">= 4.0.0"

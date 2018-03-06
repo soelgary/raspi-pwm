@@ -24,6 +24,8 @@ THE SOFTWARE.
 
 import { Peripheral } from 'raspi-peripheral';
 import { Gpio } from 'pigpio';
+const p = require('physis-label');
+const fs = require('fs');
 
 export interface IConfig {
   pin?: number | string;
@@ -54,6 +56,9 @@ export class PWM extends Peripheral {
 
   private _pwm: Gpio;
 
+  private _policies: object;
+  private _label: any;
+
   public get frequency() {
     return this._frequencyValue;
   }
@@ -62,7 +67,15 @@ export class PWM extends Peripheral {
     return this._dutyCycleValue;
   }
 
-  constructor(config?: number | string | IConfig) {
+  public get policies() {
+    return this._policies;
+  }
+
+  public get label() {
+    return this._label;
+  }
+
+  constructor(policies: string, config?: number | string | IConfig) {
     let pin: number | string = DEFAULT_PIN;
     let frequency = DEFAULT_FREQUENCY;
     if (typeof config === 'number' || typeof config === 'string') {
@@ -113,6 +126,9 @@ export class PWM extends Peripheral {
     this._frequencyValue = frequency;
     this._dutyCycleValue = 0;
     this._pwm = new Gpio(gpioPin, { mode });
+
+    this._policies = JSON.parse(fs.readFileSync(policies, 'utf-8'));
+    this._label = "pin-" + gpioPin;
   }
 
   public destroy() {
@@ -120,14 +136,28 @@ export class PWM extends Peripheral {
     super.destroy();
   }
 
-  public write(dutyCycle: number) {
+  public write(dutyCycle: number | any) {
+    console.log("We got a label..." + this._label);
+    var dc;
+    if (p.label.Labeled.prototype.isPrototypeOf(dutyCycle)) {
+      console.log("writing a labeled value");
+      const lab = dutyCycle.getLabel();
+      console.log(lab);
+      if (!lab.canFlowTo(this._label, this._policies)) {
+        throw new Error("Invalid flow");
+      }
+      dc = dutyCycle.getValue();
+    } else {
+      console.log("not writing a labeled value");
+      dc = dutyCycle;
+    }
     if (!this.alive) {
       throw new Error('Attempted to write to a destroyed peripheral');
     }
-    if (typeof dutyCycle !== 'number' || dutyCycle < 0 || dutyCycle > 1) {
-      throw new Error(`Invalid PWM duty cycle ${dutyCycle}`);
+    if (typeof dc !== 'number' || dc < 0 || dc > 1) {
+      throw new Error(`Invalid PWM duty cycle ${dc}`);
     }
-    this._dutyCycleValue = dutyCycle;
+    this._dutyCycleValue = dc;
     this._pwm.hardwarePwmWrite(this._frequencyValue, Math.round(this._dutyCycleValue * MAX_DUTY_CYCLE));
     this.emit('change', this._dutyCycleValue);
   }
